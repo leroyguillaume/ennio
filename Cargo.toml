@@ -1,0 +1,2 @@
+[workspace]
+members = ["ennio_lib", "ennio"]
