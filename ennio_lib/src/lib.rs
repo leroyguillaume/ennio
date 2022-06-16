@@ -19,6 +19,7 @@ macro_rules! vars {
 
 #[cfg(test)]
 mod test {
+    use crate::{action::*, context::*};
     use std::io::{self, Write};
 
     macro_rules! action_stub {
@@ -29,11 +30,18 @@ mod test {
 
     pub(crate) use action_stub;
 
+    pub struct ActionStub {
+        name: &'static str,
+        run_fn: RunFn,
+    }
+
     pub struct LogAsserter {
         expected: Vec<String>,
         line: usize,
         buf: Vec<u8>,
     }
+
+    pub type RunFn = Box<dyn Fn(&Context) -> Output>;
 
     impl LogAsserter {
         pub fn new(logs: Vec<String>) -> Self {
@@ -42,6 +50,22 @@ mod test {
                 line: 0,
                 buf: vec![],
             }
+        }
+    }
+
+    impl ActionStub {
+        pub fn new(name: &'static str, run_fn: RunFn) -> Self {
+            Self { name, run_fn }
+        }
+    }
+
+    impl Action for ActionStub {
+        fn name(&self) -> &str {
+            self.name
+        }
+
+        fn run(&self, ctx: &Context) -> Output {
+            (self.run_fn)(ctx)
         }
     }
 

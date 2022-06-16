@@ -72,7 +72,7 @@ pub mod test {
 
         mod run {
             use super::*;
-            use crate::{action::test::*, test::*, var::*};
+            use crate::{test::*, var::*};
             use simplelog::{Config, LevelFilter, WriteLogger};
 
             #[test]
