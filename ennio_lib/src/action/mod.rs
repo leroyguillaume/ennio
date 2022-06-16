@@ -16,16 +16,6 @@ pub struct Output {
     vars: Vars,
 }
 
-pub type Outputs = HashMap<String, Output>;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Status {
-    Unchanged,
-    Changed,
-    Failed,
-    Skipped,
-}
-
 impl Output {
     pub fn new(status: Status) -> Self {
         Self {
@@ -55,6 +45,16 @@ impl Output {
         self.vars = vars;
         self
     }
+}
+
+pub type Outputs = HashMap<String, Output>;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Status {
+    Unchanged,
+    Changed,
+    Failed,
+    Skipped,
 }
 
 impl Display for Status {
