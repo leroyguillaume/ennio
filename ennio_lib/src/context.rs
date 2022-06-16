@@ -48,7 +48,7 @@ pub mod test {
 
         #[test]
         fn should_return_context() {
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let ctx = Context::new(&workflow);
             assert_eq!(ctx.workflow.name(), workflow.name());
             assert!(ctx.outputs.is_empty());
@@ -60,7 +60,7 @@ pub mod test {
 
         #[test]
         fn should_return_none() {
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let ctx = Context {
                 workflow: &workflow,
                 outputs: outputs!(),
@@ -71,7 +71,7 @@ pub mod test {
 
         #[test]
         fn should_return_output() {
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let name = "action1";
             let expected = Output::new(Status::Changed);
             let ctx = Context {
@@ -88,7 +88,7 @@ pub mod test {
 
         #[test]
         fn should_return_outputs() {
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let output = Output::new(Status::Changed);
             let expected = outputs!("action1", output);
             let ctx = Context {
@@ -105,7 +105,7 @@ pub mod test {
 
         #[test]
         fn should_return_outputs() {
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let output = Output::new(Status::Changed);
             let expected = outputs!("action1", output);
             let ctx = Context {
@@ -122,7 +122,7 @@ pub mod test {
 
         #[test]
         fn should_update_outputs() {
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let name = "action1";
             let output = Output::new(Status::Changed);
             let expected = outputs!(name, output.clone());
@@ -140,7 +140,7 @@ pub mod test {
 
         #[test]
         fn should_return_none_if_no_outputs() {
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let ctx = Context {
                 workflow: &workflow,
                 outputs: outputs!(),
@@ -152,7 +152,7 @@ pub mod test {
         #[test]
         fn should_return_none_if_no_vars_in_ouputs() {
             let output_name = "action1";
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let output = Output::new(Status::Changed);
             let ctx = Context {
                 workflow: &workflow,
@@ -167,7 +167,7 @@ pub mod test {
             let output_name = "action1";
             let name = "foo";
             let expected = Var::Integer(15);
-            let workflow = Workflow::new("workflow1");
+            let workflow = Workflow::new(String::from("workflow1"));
             let output = Output::new(Status::Changed).add_var(name, expected.clone());
             let ctx = Context {
                 workflow: &workflow,
@@ -183,7 +183,7 @@ pub mod test {
 
         #[test]
         fn should_return_workflow() {
-            let expected = Workflow::new("workflow1");
+            let expected = Workflow::new(String::from("workflow1"));
             let ctx = Context {
                 workflow: &expected,
                 outputs: outputs!(),

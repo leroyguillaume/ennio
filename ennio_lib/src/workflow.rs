@@ -7,9 +7,9 @@ pub struct Workflow {
 }
 
 impl Workflow {
-    pub fn new(name: &str) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
-            name: String::from(name),
+            name,
             actions: vec![],
         }
     }
@@ -50,7 +50,7 @@ pub mod test {
             #[test]
             fn should_return_workflow() {
                 let name = "workflow1";
-                let workflow = Workflow::new(name);
+                let workflow = Workflow::new(String::from(name));
                 assert_eq!(workflow.name, name);
                 assert!(workflow.actions.is_empty());
             }
