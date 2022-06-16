@@ -78,7 +78,48 @@ impl Output for StdOutput {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test::*;
+
+    pub struct ExitStatusStub(i32);
+
+    impl ExitStatus for ExitStatusStub {
+        fn code(&self) -> Option<i32> {
+            Some(self.0)
+        }
+
+        fn success(&self) -> bool {
+            self.0 == 0
+        }
+    }
+
+    pub struct OutputStub {
+        exit_status: ExitStatusStub,
+        stdout: String,
+        stderr: String,
+    }
+
+    impl OutputStub {
+        pub fn new(code: i32, stdout: String, stderr: String) -> Self {
+            Self {
+                exit_status: ExitStatusStub(code),
+                stdout,
+                stderr,
+            }
+        }
+    }
+
+    impl Output for OutputStub {
+        fn status(&self) -> &dyn ExitStatus {
+            &self.exit_status
+        }
+
+        fn stderr(&self) -> String {
+            self.stderr.clone()
+        }
+
+        fn stdout(&self) -> String {
+            self.stdout.clone()
+        }
+    }
 
     mod command {
         use super::*;

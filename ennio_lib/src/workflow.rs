@@ -39,7 +39,8 @@ impl Workflow {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::*;
+    use crate::{action::test::*, test::*, var::*, *};
+    use simplelog::{Config, LevelFilter, WriteLogger};
 
     mod workflow {
         use super::*;
@@ -72,8 +73,6 @@ mod test {
 
         mod run {
             use super::*;
-            use crate::{test::*, var::*};
-            use simplelog::{Config, LevelFilter, WriteLogger};
 
             #[test]
             fn should_return_outputs() {

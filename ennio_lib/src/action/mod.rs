@@ -70,8 +70,39 @@ impl Display for Status {
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
+
+    macro_rules! action_stub {
+        ($name:expr, $run_fn:expr) => {
+            Box::new(ActionStub::new($name, Box::new($run_fn)))
+        };
+    }
+
+    pub(crate) use action_stub;
+
+    pub struct ActionStub {
+        name: &'static str,
+        run_fn: RunFn,
+    }
+
+    impl ActionStub {
+        pub fn new(name: &'static str, run_fn: RunFn) -> Self {
+            Self { name, run_fn }
+        }
+    }
+
+    impl Action for ActionStub {
+        fn name(&self) -> &str {
+            self.name
+        }
+
+        fn run(&self, ctx: &Context) -> Output {
+            (self.run_fn)(ctx)
+        }
+    }
+
+    pub type RunFn = Box<dyn Fn(&Context) -> Output>;
 
     mod output {
         use super::*;
