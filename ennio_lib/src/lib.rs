@@ -1,6 +1,7 @@
 pub mod action;
 pub mod context;
 pub mod var;
+pub mod workflow;
 
 #[macro_export]
 macro_rules! outputs {
