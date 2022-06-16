@@ -37,7 +37,7 @@ impl Workflow {
 }
 
 #[cfg(test)]
-pub mod test {
+mod test {
     use super::*;
     use crate::*;
 

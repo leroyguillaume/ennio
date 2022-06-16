@@ -70,7 +70,7 @@ impl Display for Status {
 }
 
 #[cfg(test)]
-pub mod test {
+mod test {
     use super::*;
 
     mod output {
