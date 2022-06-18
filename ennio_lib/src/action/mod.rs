@@ -1,3 +1,5 @@
+pub mod bash;
+
 use crate::{context::*, var::*, *};
 use std::{
     collections::HashMap,

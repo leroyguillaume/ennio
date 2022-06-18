@@ -84,7 +84,7 @@ impl Output for StdOutput {
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
 
     #[derive(Default)]
