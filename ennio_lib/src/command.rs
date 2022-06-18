@@ -3,14 +3,14 @@ use std::{
     process::{Command as StdCommand, ExitStatus as StdExitStatus, Output as StdOutput, Stdio},
 };
 
-pub struct Command {
-    program: String,
-    args: Vec<String>,
+pub struct Command<'a> {
+    program: &'a str,
+    args: Vec<&'a str>,
     execute_fn: ExecuteFn,
 }
 
-impl Command {
-    pub fn new(program: String) -> Self {
+impl<'a> Command<'a> {
+    pub fn new(program: &'a str) -> Self {
         Self {
             program,
             args: vec![],
@@ -26,16 +26,16 @@ impl Command {
     }
 
     pub fn execute(&self) -> io::Result<Box<dyn Output>> {
-        (self.execute_fn)(&self.program, &self.args)
+        (self.execute_fn)(self.program, &self.args)
     }
 
-    pub fn with_args(mut self, args: Vec<String>) -> Self {
+    pub fn with_args(mut self, args: Vec<&'a str>) -> Self {
         self.args = args;
         self
     }
 }
 
-pub type ExecuteFn = Box<dyn Fn(&str, &[String]) -> io::Result<Box<dyn Output>>>;
+pub type ExecuteFn = Box<dyn Fn(&str, &[&str]) -> io::Result<Box<dyn Output>>>;
 
 pub trait ExitStatus {
     fn code(&self) -> Option<i32>;
@@ -129,8 +129,8 @@ mod test {
 
             #[test]
             fn should_return_command() {
-                let program = String::from("echo");
-                let cmd = Command::new(program.clone());
+                let program = "echo";
+                let cmd = Command::new(program);
                 assert_eq!(cmd.program, program);
             }
         }
@@ -142,7 +142,7 @@ mod test {
             fn should_return_err() {
                 let expected = io::ErrorKind::PermissionDenied;
                 let cmd = Command {
-                    program: String::from("echo"),
+                    program: "echo",
                     args: vec![],
                     execute_fn: Box::new(move |_, _| Err(io::Error::from(expected))),
                 };
@@ -158,7 +158,7 @@ mod test {
                 let stdout = String::from("stdout");
                 let stderr = String::from("stderr");
                 let cmd = Command {
-                    program: String::from("echo"),
+                    program: "echo",
                     args: vec![],
                     execute_fn: Box::new({
                         let stdout = stdout.clone();
@@ -184,9 +184,9 @@ mod test {
 
             #[test]
             fn should_set_args() {
-                let expected = vec![String::from("-n"), String::from("it works!")];
+                let expected = vec!["-n", "it works!"];
                 let cmd = Command {
-                    program: String::from("echo"),
+                    program: "echo",
                     args: vec![],
                     execute_fn: Box::new(|_, _| {
                         Ok(Box::new(OutputStub::new(0, String::new(), String::new())))
