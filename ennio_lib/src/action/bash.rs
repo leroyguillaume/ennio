@@ -55,7 +55,7 @@ type ExecuteFn = Box<dyn Fn(&Command) -> io::Result<Box<dyn CmdOutput>>>;
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{command::test::*, test::*};
+    use crate::command::test::*;
 
     mod bash_action {
         use super::*;
@@ -92,7 +92,7 @@ mod test {
             use super::*;
 
             macro_rules! test {
-                ($code:expr, $status:expr, $create_log_fn:expr) => {
+                ($code:expr, $status:expr) => {
                     let stdout = "stdout";
                     let stderr = "stderr";
                     let expected = Output::new($status)
@@ -113,11 +113,6 @@ mod test {
                             )))
                         }),
                     };
-                    init_logger();
-                    unsafe {
-                        let logger = LOGGER.as_mut().unwrap();
-                        logger.expect_logs(vec![$create_log_fn(stderr)]);
-                    }
                     let output = action.run(&ctx);
                     assert_eq!(output, expected);
                 };
@@ -139,31 +134,18 @@ mod test {
                         Err(io::Error::from(err_kind))
                     }),
                 };
-                init_logger();
-                unsafe {
-                    let logger = LOGGER.as_mut().unwrap();
-                    logger.expect_logs(vec![format!(
-                        "Unable to execute script: {}",
-                        io::Error::from(err_kind)
-                    )]);
-                }
                 let output = action.run(&ctx);
                 assert_eq!(output, expected);
             }
 
             #[test]
             fn should_return_output_with_failed_status_if_exit_status_is_not_success() {
-                test!(1, Status::Failed, |stderr| format!(
-                    "Script execution failed:\n{}",
-                    stderr
-                ));
+                test!(1, Status::Failed);
             }
 
             #[test]
             fn should_return_output_with_changed_status() {
-                test!(0, Status::Changed, |_| String::from(
-                    "Script executed successfully"
-                ));
+                test!(0, Status::Changed);
             }
         }
     }

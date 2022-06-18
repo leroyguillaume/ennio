@@ -38,7 +38,7 @@ impl Workflow {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{action::test::*, test::*, var::*, *};
+    use crate::{action::test::*, var::*, *};
 
     mod workflow {
         use super::*;
@@ -149,32 +149,6 @@ mod test {
                     name: workflow_name.into(),
                     actions: vec![action1, action2, action3, action4],
                 };
-                init_logger();
-                unsafe {
-                    let logger = LOGGER.as_mut().unwrap();
-                    logger.expect_logs(vec![
-                        format!("Executing action '{}'", action1_name),
-                        format!(
-                            "Action '{}' terminated with status: {}",
-                            action1_name, action1_status
-                        ),
-                        format!("Executing action '{}'", action2_name),
-                        format!(
-                            "Action '{}' terminated with status: {}",
-                            action2_name, action2_status
-                        ),
-                        format!("Executing action '{}'", action3_name),
-                        format!(
-                            "Action '{}' terminated with status: {}",
-                            action3_name, action3_status
-                        ),
-                        format!("Executing action '{}'", action4_name),
-                        format!(
-                            "Action '{}' terminated with status: {}",
-                            action4_name, action4_status
-                        ),
-                    ]);
-                }
                 let outputs = workflow.run();
                 assert_eq!(outputs, expected);
             }

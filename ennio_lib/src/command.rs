@@ -107,7 +107,6 @@ type ExecuteFn = Box<dyn Fn(&str, &[&str]) -> io::Result<Box<dyn Output>>>;
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use crate::test::*;
     use std::fmt::{self, Formatter};
 
     #[derive(Default)]
@@ -200,14 +199,6 @@ pub mod test {
                     args: vec!["-n", "it works!"],
                     execute_fn: Box::new(move |_, _| Err(io::Error::from(expected))),
                 };
-                init_logger();
-                unsafe {
-                    let logger = LOGGER.as_mut().unwrap();
-                    logger.expect_logs(vec![
-                        format!("Executing command:\n{} {}", cmd.program, cmd.args.join(" ")),
-                        format!("Unable to execute command: {}", io::Error::from(expected)),
-                    ]);
-                }
                 match cmd.execute() {
                     Ok(_) => panic!("should be fail"),
                     Err(err) => assert_eq!(err.kind(), expected),
@@ -219,7 +210,6 @@ pub mod test {
                 let code = 0;
                 let stdout = "stdout";
                 let stderr = "stderr";
-                let exit_status = ExitStatusStub(code);
                 let cmd = Command {
                     program: "echo",
                     args: vec!["-n", "it works!"],
@@ -231,16 +221,6 @@ pub mod test {
                         )))
                     }),
                 };
-                init_logger();
-                unsafe {
-                    let logger = LOGGER.as_mut().unwrap();
-                    logger.expect_logs(vec![
-                        format!("Executing command:\n{} {}", cmd.program, cmd.args.join(" ")),
-                        format!("Command terminated with {}", exit_status),
-                        format!("Command stdout:\n{}", stdout),
-                        format!("Command stderr:\n{}", stderr),
-                    ]);
-                }
                 let output = cmd.execute().unwrap();
                 assert_eq!(output.status().code(), Some(code));
                 assert_eq!(output.stdout(), stdout);
