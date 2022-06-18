@@ -25,8 +25,16 @@ impl<'a> Command<'a> {
         }
     }
 
+    pub fn args(&self) -> &[&str] {
+        &self.args
+    }
+
     pub fn execute(&self) -> io::Result<Box<dyn Output>> {
         (self.execute_fn)(self.program, &self.args)
+    }
+
+    pub fn program(&self) -> &str {
+        self.program
     }
 
     pub fn with_args(mut self, args: Vec<&'a str>) -> Self {
@@ -79,6 +87,7 @@ impl Output for StdOutput {
 mod test {
     use super::*;
 
+    #[derive(Default)]
     pub struct ExitStatusStub(i32);
 
     impl ExitStatus for ExitStatusStub {
@@ -91,6 +100,7 @@ mod test {
         }
     }
 
+    #[derive(Default)]
     pub struct OutputStub {
         exit_status: ExitStatusStub,
         stdout: String,
@@ -132,6 +142,21 @@ mod test {
                 let program = "echo";
                 let cmd = Command::new(program);
                 assert_eq!(cmd.program, program);
+            }
+        }
+
+        mod args {
+            use super::*;
+
+            #[test]
+            fn should_return_args() {
+                let expected = vec!["-n", "it works!"];
+                let cmd = Command {
+                    program: "echo",
+                    args: expected.clone(),
+                    execute_fn: Box::new(move |_, _| Ok(Box::new(OutputStub::default()))),
+                };
+                assert_eq!(cmd.args(), expected);
             }
         }
 
@@ -179,6 +204,21 @@ mod test {
             }
         }
 
+        mod program {
+            use super::*;
+
+            #[test]
+            fn should_return_program() {
+                let expected = "echo";
+                let cmd = Command {
+                    program: expected,
+                    args: vec![],
+                    execute_fn: Box::new(move |_, _| Ok(Box::new(OutputStub::default()))),
+                };
+                assert_eq!(cmd.program(), expected);
+            }
+        }
+
         mod with_args {
             use super::*;
 
@@ -188,9 +228,7 @@ mod test {
                 let cmd = Command {
                     program: "echo",
                     args: vec![],
-                    execute_fn: Box::new(|_, _| {
-                        Ok(Box::new(OutputStub::new(0, String::new(), String::new())))
-                    }),
+                    execute_fn: Box::new(|_, _| Ok(Box::new(OutputStub::default()))),
                 };
                 let cmd = cmd.with_args(expected.clone());
                 assert_eq!(cmd.args, expected);
