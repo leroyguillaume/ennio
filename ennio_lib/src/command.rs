@@ -1,4 +1,6 @@
+use log::{log_enabled, trace, Level};
 use std::{
+    fmt::Display,
     io,
     process::{Command as StdCommand, ExitStatus as StdExitStatus, Output as StdOutput, Stdio},
 };
@@ -30,7 +32,26 @@ impl<'a> Command<'a> {
     }
 
     pub fn execute(&self) -> io::Result<Box<dyn Output>> {
-        (self.execute_fn)(self.program, &self.args)
+        if log_enabled!(Level::Trace) {
+            trace!(
+                "Executing command:\n{} {}",
+                self.program,
+                self.args.join(" ")
+            );
+        }
+        let output = match (self.execute_fn)(self.program, &self.args) {
+            Ok(output) => output,
+            Err(err) => {
+                trace!("Unable to execute command: {}", err);
+                return Err(err);
+            }
+        };
+        if log_enabled!(Level::Trace) {
+            trace!("Command terminated with {}", output.status());
+            trace!("Command stdout:\n{}", output.stdout());
+            trace!("Command stderr:\n{}", output.stderr());
+        }
+        Ok(output)
     }
 
     pub fn program(&self) -> &str {
@@ -43,7 +64,7 @@ impl<'a> Command<'a> {
     }
 }
 
-pub trait ExitStatus {
+pub trait ExitStatus: Display {
     fn code(&self) -> Option<i32>;
 
     fn success(&self) -> bool;
@@ -86,9 +107,17 @@ type ExecuteFn = Box<dyn Fn(&str, &[&str]) -> io::Result<Box<dyn Output>>>;
 #[cfg(test)]
 pub mod test {
     use super::*;
+    use crate::test::*;
+    use std::fmt::{self, Formatter};
 
     #[derive(Default)]
     pub struct ExitStatusStub(i32);
+
+    impl Display for ExitStatusStub {
+        fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+            write!(f, "exit status: {}", self.0)
+        }
+    }
 
     impl ExitStatus for ExitStatusStub {
         fn code(&self) -> Option<i32> {
@@ -168,9 +197,17 @@ pub mod test {
                 let expected = io::ErrorKind::PermissionDenied;
                 let cmd = Command {
                     program: "echo",
-                    args: vec![],
+                    args: vec!["-n", "it works!"],
                     execute_fn: Box::new(move |_, _| Err(io::Error::from(expected))),
                 };
+                init_logger();
+                unsafe {
+                    let logger = LOGGER.as_mut().unwrap();
+                    logger.expect_logs(vec![
+                        format!("Executing command:\n{} {}", cmd.program, cmd.args.join(" ")),
+                        format!("Unable to execute command: {}", io::Error::from(expected)),
+                    ]);
+                }
                 match cmd.execute() {
                     Ok(_) => panic!("should be fail"),
                     Err(err) => assert_eq!(err.kind(), expected),
@@ -182,9 +219,10 @@ pub mod test {
                 let code = 0;
                 let stdout = "stdout";
                 let stderr = "stderr";
+                let exit_status = ExitStatusStub(code);
                 let cmd = Command {
                     program: "echo",
-                    args: vec![],
+                    args: vec!["-n", "it works!"],
                     execute_fn: Box::new(move |_, _| {
                         Ok(Box::new(OutputStub::new(
                             code,
@@ -193,6 +231,16 @@ pub mod test {
                         )))
                     }),
                 };
+                init_logger();
+                unsafe {
+                    let logger = LOGGER.as_mut().unwrap();
+                    logger.expect_logs(vec![
+                        format!("Executing command:\n{} {}", cmd.program, cmd.args.join(" ")),
+                        format!("Command terminated with {}", exit_status),
+                        format!("Command stdout:\n{}", stdout),
+                        format!("Command stderr:\n{}", stderr),
+                    ]);
+                }
                 let output = cmd.execute().unwrap();
                 assert_eq!(output.status().code(), Some(code));
                 assert_eq!(output.stdout(), stdout);
