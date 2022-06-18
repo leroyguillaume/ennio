@@ -19,7 +19,7 @@ impl Workflow {
     }
 
     pub fn run(&self) -> Outputs {
-        let mut ctx = Context::new(self);
+        let mut ctx = Context::new(&self.name);
         for action in self.actions.iter() {
             let action_name = action.name();
             info!("[{}] Executing action '{}'", self.name, action_name);

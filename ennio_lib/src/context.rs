@@ -1,14 +1,15 @@
-use crate::{action::*, var::*, workflow::*};
+use crate::{action::*, var::*};
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct Context<'a> {
-    workflow: &'a Workflow,
+    workflow_name: &'a str,
     outputs: Outputs,
 }
 
 impl<'a> Context<'a> {
-    pub fn new(workflow: &'a Workflow) -> Self {
+    pub fn new(workflow_name: &'a str) -> Self {
         Self {
-            workflow,
+            workflow_name,
             outputs: Outputs::new(),
         }
     }
@@ -33,8 +34,8 @@ impl<'a> Context<'a> {
         self.output(action_name).and_then(|output| output.var(name))
     }
 
-    pub fn workflow(&self) -> &Workflow {
-        self.workflow
+    pub fn workflow_name(&self) -> &str {
+        self.workflow_name
     }
 }
 
@@ -48,10 +49,13 @@ mod test {
 
         #[test]
         fn should_return_context() {
-            let workflow = Workflow::new(String::from("workflow1"));
-            let ctx = Context::new(&workflow);
-            assert_eq!(ctx.workflow.name(), workflow.name());
-            assert!(ctx.outputs.is_empty());
+            let workflow_name = "workflow1";
+            let exepcted = Context {
+                workflow_name,
+                outputs: outputs!(),
+            };
+            let ctx = Context::new(workflow_name);
+            assert_eq!(ctx, exepcted);
         }
     }
 
@@ -60,9 +64,8 @@ mod test {
 
         #[test]
         fn should_return_none() {
-            let workflow = Workflow::new(String::from("workflow1"));
             let ctx = Context {
-                workflow: &workflow,
+                workflow_name: "workflow1",
                 outputs: outputs!(),
             };
             let output = ctx.output("action1");
@@ -71,11 +74,10 @@ mod test {
 
         #[test]
         fn should_return_output() {
-            let workflow = Workflow::new(String::from("workflow1"));
             let name = "action1";
             let expected = Output::new(Status::Changed);
             let ctx = Context {
-                workflow: &workflow,
+                workflow_name: "workflow1",
                 outputs: outputs!(name, expected.clone()),
             };
             let output = ctx.output(name).unwrap();
@@ -88,11 +90,10 @@ mod test {
 
         #[test]
         fn should_return_outputs() {
-            let workflow = Workflow::new(String::from("workflow1"));
             let output = Output::new(Status::Changed);
             let expected = outputs!("action1", output);
             let ctx = Context {
-                workflow: &workflow,
+                workflow_name: "workflow1",
                 outputs: expected.clone(),
             };
             let outputs = ctx.outputs();
@@ -105,11 +106,10 @@ mod test {
 
         #[test]
         fn should_return_outputs() {
-            let workflow = Workflow::new(String::from("workflow1"));
             let output = Output::new(Status::Changed);
             let expected = outputs!("action1", output);
             let ctx = Context {
-                workflow: &workflow,
+                workflow_name: "workflow1",
                 outputs: expected.clone(),
             };
             let outputs = ctx.take_outputs();
@@ -122,12 +122,11 @@ mod test {
 
         #[test]
         fn should_update_outputs() {
-            let workflow = Workflow::new(String::from("workflow1"));
             let name = "action1";
             let output = Output::new(Status::Changed);
             let expected = outputs!(name, output.clone());
             let mut ctx = Context {
-                workflow: &workflow,
+                workflow_name: "workflow1",
                 outputs: outputs!(),
             };
             ctx.update(name, output);
@@ -140,9 +139,8 @@ mod test {
 
         #[test]
         fn should_return_none_if_no_outputs() {
-            let workflow = Workflow::new(String::from("workflow1"));
             let ctx = Context {
-                workflow: &workflow,
+                workflow_name: "workflow1",
                 outputs: outputs!(),
             };
             let var = ctx.var("action1", "foo");
@@ -152,10 +150,9 @@ mod test {
         #[test]
         fn should_return_none_if_no_vars_in_ouputs() {
             let output_name = "action1";
-            let workflow = Workflow::new(String::from("workflow1"));
             let output = Output::new(Status::Changed);
             let ctx = Context {
-                workflow: &workflow,
+                workflow_name: "workflow1",
                 outputs: outputs!(output_name, output),
             };
             let var = ctx.var(output_name, "foo");
@@ -167,10 +164,9 @@ mod test {
             let output_name = "action1";
             let name = "foo";
             let expected = Var::Integer(15);
-            let workflow = Workflow::new(String::from("workflow1"));
             let output = Output::new(Status::Changed).add_var(name, expected.clone());
             let ctx = Context {
-                workflow: &workflow,
+                workflow_name: "workflow1",
                 outputs: outputs!(output_name, output),
             };
             let var = ctx.var(output_name, name).unwrap();
@@ -178,18 +174,17 @@ mod test {
         }
     }
 
-    mod workflow {
+    mod workflow_name {
         use super::*;
 
         #[test]
         fn should_return_workflow() {
-            let expected = Workflow::new(String::from("workflow1"));
+            let expected = "workflow1";
             let ctx = Context {
-                workflow: &expected,
+                workflow_name: expected,
                 outputs: outputs!(),
             };
-            let workflow = ctx.workflow();
-            assert_eq!(workflow.name(), expected.name());
+            assert_eq!(ctx.workflow_name(), expected);
         }
     }
 }
