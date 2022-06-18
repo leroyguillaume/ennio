@@ -43,8 +43,6 @@ impl<'a> Command<'a> {
     }
 }
 
-pub type ExecuteFn = Box<dyn Fn(&str, &[&str]) -> io::Result<Box<dyn Output>>>;
-
 pub trait ExitStatus {
     fn code(&self) -> Option<i32>;
 
@@ -82,6 +80,8 @@ impl Output for StdOutput {
         String::from_utf8_lossy(&self.stdout).into_owned()
     }
 }
+
+type ExecuteFn = Box<dyn Fn(&str, &[&str]) -> io::Result<Box<dyn Output>>>;
 
 #[cfg(test)]
 pub mod test {
