@@ -20,44 +20,71 @@ macro_rules! vars {
 
 #[cfg(test)]
 mod test {
-    use std::io::{self, Write};
+    use log::{set_logger, set_max_level, LevelFilter, Log, Metadata, Record};
+    use std::{
+        collections::HashMap,
+        sync::{Mutex, Once},
+        thread,
+    };
 
-    pub struct LogAsserter {
-        expected: Vec<String>,
-        line: usize,
-        buf: Vec<u8>,
+    pub static mut LOGGER: Option<LoggerStub> = None;
+    static mut LOGGER_LOCK: Option<Mutex<()>> = None;
+    static mut LOG_INDEX: Option<HashMap<String, usize>> = None;
+    static INIT: Once = Once::new();
+
+    #[derive(Default)]
+    pub struct LoggerStub {
+        expected: HashMap<String, Vec<String>>,
     }
 
-    impl LogAsserter {
-        pub fn new(logs: Vec<String>) -> Self {
-            Self {
-                expected: logs,
-                line: 0,
-                buf: vec![],
+    impl LoggerStub {
+        pub fn expect_logs(&mut self, logs: Vec<String>) {
+            let thread = thread::current();
+            let thread_name = thread.name().unwrap();
+            unsafe {
+                let _lock = LOGGER_LOCK.as_mut().unwrap().get_mut().unwrap();
+                self.expected.insert(thread_name.into(), logs);
             }
         }
     }
 
-    impl Write for LogAsserter {
-        fn flush(&mut self) -> io::Result<()> {
-            Ok(())
+    impl Log for LoggerStub {
+        fn enabled(&self, _metadata: &Metadata) -> bool {
+            true
         }
 
-        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-            self.buf.extend_from_slice(buf);
-            let log = String::from_utf8_lossy(&self.buf);
-            if log.ends_with('\n') {
-                if self.line >= self.expected.len() {
-                    panic!("unexpected log line: {}", log)
+        fn flush(&self) {}
+
+        fn log(&self, record: &Record) {
+            let thread = thread::current();
+            let thread_name = thread.name().unwrap();
+            unsafe {
+                let _lock = LOGGER_LOCK.as_mut().unwrap().get_mut().unwrap();
+                let logger = LOGGER.as_mut().unwrap();
+                let expected = logger.expected.get(thread_name).unwrap();
+                let log_index = LOG_INDEX.as_mut().unwrap();
+                let index = *log_index.get(thread_name).unwrap_or(&0);
+                if index >= expected.len() {
+                    panic!("unexpected log: {}", record.args());
                 }
-                // we skip 9 first characters because it is the hour
-                // and the last one because it is \n
-                let log = &log[9..log.len() - 1];
-                assert_eq!(log, self.expected[self.line]);
-                self.line += 1;
-                self.buf = vec![];
+                let expected = expected[index].clone();
+                let log = record.args().to_string();
+                assert_eq!(log, expected);
+                log_index.insert(thread_name.into(), index + 1);
             }
-            Ok(buf.len())
         }
+    }
+
+    pub fn init_logger() {
+        INIT.call_once(|| {
+            let logger = LoggerStub::default();
+            unsafe {
+                LOGGER_LOCK = Some(Mutex::new(()));
+                LOGGER = Some(logger);
+                LOG_INDEX = Some(HashMap::new());
+                set_logger(LOGGER.as_ref().unwrap()).unwrap();
+                set_max_level(LevelFilter::Trace);
+            };
+        });
     }
 }

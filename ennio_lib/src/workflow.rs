@@ -22,11 +22,10 @@ impl Workflow {
         let mut ctx = Context::new(&self.name);
         for action in self.actions.iter() {
             let action_name = action.name();
-            info!("[{}] Executing action '{}'", self.name, action_name);
+            info!("Executing action '{}'", action_name);
             let output = action.run(&ctx);
             info!(
-                "[{}] Action '{}' terminated with status: {}",
-                self.name,
+                "Action '{}' terminated with status: {}",
                 action_name,
                 output.status()
             );
@@ -40,7 +39,6 @@ impl Workflow {
 mod test {
     use super::*;
     use crate::{action::test::*, test::*, var::*, *};
-    use simplelog::{Config, LevelFilter, WriteLogger};
 
     mod workflow {
         use super::*;
@@ -151,42 +149,32 @@ mod test {
                     name: String::from(workflow_name),
                     actions: vec![action1, action2, action3, action4],
                 };
-                let logs = vec![
-                    format!(
-                        "[INFO] [{}] Executing action '{}'",
-                        workflow_name, action1_name
-                    ),
-                    format!(
-                        "[INFO] [{}] Action '{}' terminated with status: {}",
-                        workflow_name, action1_name, action1_status
-                    ),
-                    format!(
-                        "[INFO] [{}] Executing action '{}'",
-                        workflow_name, action2_name
-                    ),
-                    format!(
-                        "[INFO] [{}] Action '{}' terminated with status: {}",
-                        workflow_name, action2_name, action2_status
-                    ),
-                    format!(
-                        "[INFO] [{}] Executing action '{}'",
-                        workflow_name, action3_name
-                    ),
-                    format!(
-                        "[INFO] [{}] Action '{}' terminated with status: {}",
-                        workflow_name, action3_name, action3_status
-                    ),
-                    format!(
-                        "[INFO] [{}] Executing action '{}'",
-                        workflow_name, action4_name
-                    ),
-                    format!(
-                        "[INFO] [{}] Action '{}' terminated with status: {}",
-                        workflow_name, action4_name, action4_status
-                    ),
-                ];
-                let log_asserter = LogAsserter::new(logs);
-                WriteLogger::init(LevelFilter::Trace, Config::default(), log_asserter).unwrap();
+                init_logger();
+                unsafe {
+                    let logger = LOGGER.as_mut().unwrap();
+                    logger.expect_logs(vec![
+                        format!("Executing action '{}'", action1_name),
+                        format!(
+                            "Action '{}' terminated with status: {}",
+                            action1_name, action1_status
+                        ),
+                        format!("Executing action '{}'", action2_name),
+                        format!(
+                            "Action '{}' terminated with status: {}",
+                            action2_name, action2_status
+                        ),
+                        format!("Executing action '{}'", action3_name),
+                        format!(
+                            "Action '{}' terminated with status: {}",
+                            action3_name, action3_status
+                        ),
+                        format!("Executing action '{}'", action4_name),
+                        format!(
+                            "Action '{}' terminated with status: {}",
+                            action4_name, action4_status
+                        ),
+                    ]);
+                }
                 let outputs = workflow.run();
                 assert_eq!(outputs, expected);
             }
