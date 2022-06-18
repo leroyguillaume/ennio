@@ -27,7 +27,7 @@ impl Output {
     }
 
     pub fn add_var(mut self, name: &str, var: Var) -> Self {
-        self.vars.insert(String::from(name), var);
+        self.vars.insert(name.into(), var);
         self
     }
 

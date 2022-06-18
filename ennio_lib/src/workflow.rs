@@ -49,7 +49,7 @@ mod test {
             #[test]
             fn should_return_workflow() {
                 let name = "workflow1";
-                let workflow = Workflow::new(String::from(name));
+                let workflow = Workflow::new(name.into());
                 assert_eq!(workflow.name, name);
                 assert!(workflow.actions.is_empty());
             }
@@ -62,7 +62,7 @@ mod test {
             fn should_return_name() {
                 let expected = "workflow1";
                 let workflow = Workflow {
-                    name: String::from(expected),
+                    name: expected.into(),
                     actions: vec![],
                 };
                 assert_eq!(workflow.name(), expected);
@@ -146,7 +146,7 @@ mod test {
                     action4_output.clone()
                 });
                 let workflow = Workflow {
-                    name: String::from(workflow_name),
+                    name: workflow_name.into(),
                     actions: vec![action1, action2, action3, action4],
                 };
                 init_logger();

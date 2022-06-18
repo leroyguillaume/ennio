@@ -27,7 +27,7 @@ impl<'a> Context<'a> {
     }
 
     pub fn update(&mut self, name: &str, output: Output) {
-        self.outputs.insert(String::from(name), output);
+        self.outputs.insert(name.into(), output);
     }
 
     pub fn var(&self, action_name: &str, name: &str) -> Option<Var> {

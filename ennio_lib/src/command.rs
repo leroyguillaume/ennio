@@ -180,21 +180,17 @@ pub mod test {
             #[test]
             fn should_return_output() {
                 let code = 0;
-                let stdout = String::from("stdout");
-                let stderr = String::from("stderr");
+                let stdout = "stdout";
+                let stderr = "stderr";
                 let cmd = Command {
                     program: "echo",
                     args: vec![],
-                    execute_fn: Box::new({
-                        let stdout = stdout.clone();
-                        let stderr = stderr.clone();
-                        move |_, _| {
-                            Ok(Box::new(OutputStub::new(
-                                code,
-                                stdout.clone(),
-                                stderr.clone(),
-                            )))
-                        }
+                    execute_fn: Box::new(move |_, _| {
+                        Ok(Box::new(OutputStub::new(
+                            code,
+                            stdout.into(),
+                            stderr.into(),
+                        )))
                     }),
                 };
                 let output = cmd.execute().unwrap();

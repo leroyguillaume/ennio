@@ -58,9 +58,9 @@ mod test {
 
             #[test]
             fn should_return_action() {
-                let name = String::from("action1");
-                let script = String::from("echo 'it works!'");
-                let action = BashAction::new(name.clone(), script.clone());
+                let name = "action1";
+                let script = "echo 'it works!'";
+                let action = BashAction::new(name.into(), script.into());
                 assert_eq!(action.name, name);
                 assert_eq!(action.script, script);
             }
@@ -71,9 +71,9 @@ mod test {
 
             #[test]
             fn should_return_name() {
-                let name = String::from("action1");
+                let name = "action1";
                 let action = BashAction {
-                    name: name.clone(),
+                    name: name.into(),
                     script: String::from("echo 'it works!'"),
                     execute_fn: Box::new(|cmd| cmd.execute()),
                 };
@@ -89,20 +89,20 @@ mod test {
                     let stdout = "stdout";
                     let stderr = "stderr";
                     let expected = Output::new($status)
-                        .add_var("stdout", Var::String(String::from(stdout)))
-                        .add_var("stderr", Var::String(String::from(stderr)));
+                        .add_var("stdout", Var::String(stdout.into()))
+                        .add_var("stderr", Var::String(stderr.into()));
                     let ctx = Context::new("workflow1");
-                    let script = String::from("echo 'it works!'");
+                    let script = "echo 'it works!'";
                     let action = BashAction {
                         name: String::from("action1"),
-                        script: script.clone(),
+                        script: script.into(),
                         execute_fn: Box::new(move |cmd| {
                             assert_eq!(cmd.program(), "bash");
                             assert_eq!(cmd.args(), vec!["-ec", &script]);
                             Ok(Box::new(OutputStub::new(
                                 $code,
-                                String::from(stdout),
-                                String::from(stderr),
+                                stdout.into(),
+                                stderr.into(),
                             )))
                         }),
                     };
@@ -117,13 +117,13 @@ mod test {
                 let expected = Output::new(Status::Failed)
                     .add_var("stderr", Var::String(io::Error::from(err_kind).to_string()));
                 let ctx = Context::new("workflow1");
-                let script = String::from("echo 'it works!'");
+                let script = "echo 'it works!'";
                 let action = BashAction {
                     name: String::from("action1"),
-                    script: script.clone(),
+                    script: script.into(),
                     execute_fn: Box::new(move |cmd| {
                         assert_eq!(cmd.program(), "bash");
-                        assert_eq!(cmd.args(), vec!["-ec", &script]);
+                        assert_eq!(cmd.args(), vec!["-ec", script]);
                         Err(io::Error::from(err_kind))
                     }),
                 };
