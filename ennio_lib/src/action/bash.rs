@@ -51,6 +51,25 @@ impl Action for BashAction {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct BashActionBuilder {
+    name: String,
+    script: String,
+}
+
+impl BashActionBuilder {
+    pub fn new(name: String, script: String) -> Self {
+        Self { name, script }
+    }
+}
+
+impl Builder for BashActionBuilder {
+    fn build(self, _ctx: &Context) -> Result<Box<dyn Action>, BuildError> {
+        let action = BashAction::new(self.name, self.script);
+        Ok(Box::new(action))
+    }
+}
+
 type ExecuteFn = Box<dyn Fn(&Command) -> io::Result<Box<dyn CmdOutput>>>;
 
 #[cfg(test)]
@@ -149,6 +168,43 @@ mod test {
             #[test]
             fn should_return_output_with_changed_status() {
                 test!(0, Status::Changed);
+            }
+        }
+    }
+
+    mod bash_action_builder {
+        use super::*;
+
+        mod new {
+            use super::*;
+
+            #[test]
+            fn should_return_builder() {
+                let name = "action1";
+                let script = "echo hello world!";
+                let expected = BashActionBuilder {
+                    name: name.into(),
+                    script: script.into(),
+                };
+                let builder = BashActionBuilder::new(name.into(), script.into());
+                assert_eq!(builder, expected);
+            }
+        }
+
+        mod build {
+            use super::*;
+
+            #[test]
+            fn should_return_action() {
+                let ctx = Context::new("workflow1");
+                let name = "action1";
+                let script = "echo hello world!";
+                let builder = BashActionBuilder {
+                    name: name.into(),
+                    script: script.into(),
+                };
+                let action = builder.build(&ctx).unwrap();
+                assert_eq!(action.name(), name);
             }
         }
     }

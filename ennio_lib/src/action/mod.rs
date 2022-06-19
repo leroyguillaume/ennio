@@ -15,6 +15,13 @@ pub trait Action {
     fn run(&self, ctx: &Context) -> Output;
 }
 
+pub trait Builder {
+    fn build(self, ctx: &Context) -> Result<Box<dyn Action>, BuildError>;
+}
+
+#[derive(Debug)]
+pub enum BuildError {}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Output {
     status: Status,
