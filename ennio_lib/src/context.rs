@@ -1,5 +1,7 @@
 use crate::action::*;
+use regex::Regex;
 use serde_json::Value;
+use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Context<'a> {
@@ -31,9 +33,26 @@ impl<'a> Context<'a> {
         self.outputs.insert(name.into(), output);
     }
 
-    pub fn value(&self, action_name: &str, var_name: &str) -> Option<&Value> {
-        self.output(action_name)
-            .and_then(|output| output.value(var_name))
+    pub fn value(&self, var_name: &str) -> Result<&Value, VarError> {
+        let re = Regex::new(ACTION_NAME_PATTERN).unwrap();
+        match re.find(var_name) {
+            Some(mat) => {
+                let action_name = mat.as_str();
+                let output = self
+                    .output(action_name)
+                    .ok_or_else(|| VarError::UnknownAction(action_name.into()))?;
+                let var_name = &var_name[action_name.len()..];
+                if var_name.is_empty() {
+                    Err(VarError::MissingVarName)
+                } else {
+                    let var_name = &var_name[1..];
+                    output
+                        .value(var_name)
+                        .ok_or_else(|| VarError::UnknownVar(action_name.into(), var_name.into()))
+                }
+            }
+            None => Err(VarError::InvalidSyntax(var_name.into())),
+        }
     }
 
     pub fn workflow_name(&self) -> &str {
@@ -41,11 +60,32 @@ impl<'a> Context<'a> {
     }
 }
 
+#[derive(Debug)]
+pub enum VarError {
+    InvalidSyntax(String),
+    UnknownAction(String),
+    MissingVarName,
+    UnknownVar(String, String),
+}
+
+impl Display for VarError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let s = match self {
+            Self::InvalidSyntax(var_name) => format!("'{}' is not a valid variable name", var_name),
+            Self::UnknownAction(action_name) => format!("Action '{}' does not exist", action_name),
+            Self::MissingVarName => String::from("Missing variable name"),
+            Self::UnknownVar(action_name, var_name) => {
+                format!("No variable '{}' in '{}' outputs", var_name, action_name)
+            }
+        };
+        write!(f, "{}", s)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use crate::*;
-    use serde_json::value::Number;
 
     mod new {
         use super::*;
@@ -141,39 +181,81 @@ mod test {
         use super::*;
 
         #[test]
-        fn should_return_none_if_no_outputs() {
+        fn should_return_invalid_syntex_if_wrong_syntex() {
+            let expected = "éè";
             let ctx = Context {
                 workflow_name: "workflow1",
                 outputs: outputs!(),
             };
-            let val = ctx.value("action1", "foo");
-            assert!(val.is_none());
+            match ctx.value(expected) {
+                Ok(_) => panic!("should fail"),
+                Err(VarError::InvalidSyntax(var_name)) => assert_eq!(var_name, expected),
+                Err(err) => panic!("{}", err),
+            }
         }
 
         #[test]
-        fn should_return_none_if_no_vars_in_ouputs() {
-            let output_name = "action1";
+        fn should_return_unknown_action() {
+            let expected = "foo";
+            let ctx = Context {
+                workflow_name: "workflow1",
+                outputs: outputs!(),
+            };
+            match ctx.value(expected) {
+                Ok(_) => panic!("should fail"),
+                Err(VarError::UnknownAction(action_name)) => {
+                    assert_eq!(action_name, expected)
+                }
+                Err(err) => panic!("{}", err),
+            }
+        }
+
+        #[test]
+        fn should_return_missing_var_name() {
+            let action_name = "action1";
             let output = Output::new(Status::Changed);
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(output_name, output),
+                outputs: outputs!(action_name, output),
             };
-            let val = ctx.value(output_name, "foo");
-            assert!(val.is_none());
+            match ctx.value(action_name) {
+                Ok(_) => panic!("should fail"),
+                Err(VarError::MissingVarName) => {}
+                Err(err) => panic!("{}", err),
+            }
+        }
+
+        #[test]
+        fn should_return_unknown_var() {
+            let expected_action_name = "action1";
+            let output = Output::new(Status::Changed);
+            let expected_var_name = "foo";
+            let ctx = Context {
+                workflow_name: "workflow1",
+                outputs: outputs!(expected_action_name, output),
+            };
+            match ctx.value(&format!("{}.{}", expected_action_name, expected_var_name)) {
+                Ok(_) => panic!("should fail"),
+                Err(VarError::UnknownVar(action_name, var_name)) => {
+                    assert_eq!(action_name, expected_action_name);
+                    assert_eq!(var_name, expected_var_name);
+                }
+                Err(err) => panic!("{}", err),
+            }
         }
 
         #[test]
         fn should_return_var() {
-            let output_name = "action1";
-            let name = "foo";
-            let expected = Value::Number(Number::from(15i8));
-            let output = Output::new(Status::Changed).add_var(name, expected.clone());
+            let action_name = "action1";
+            let var_name = "foo";
+            let expected = Value::Bool(true);
+            let output = Output::new(Status::Changed).add_var(var_name, expected.clone());
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(output_name, output),
+                outputs: outputs!(action_name, output),
             };
-            let value = ctx.value(output_name, name).unwrap();
-            assert_eq!(*value, expected);
+            let val = ctx.value(&format!("{}.{}", action_name, var_name)).unwrap();
+            assert_eq!(val.clone(), expected);
         }
     }
 
@@ -188,6 +270,44 @@ mod test {
                 outputs: outputs!(),
             };
             assert_eq!(ctx.workflow_name(), expected);
+        }
+    }
+
+    mod var_error {
+        use super::*;
+
+        mod display {
+            use super::*;
+
+            macro_rules! test {
+                ($name:ident, $value:expr, $expected:expr) => {
+                    #[test]
+                    fn $name() {
+                        assert_eq!(format!("{}", $value), $expected);
+                    }
+                };
+            }
+
+            test!(
+                invalid_syntax,
+                VarError::InvalidSyntax(String::from("éè")),
+                "'éè' is not a valid variable name"
+            );
+            test!(
+                unknown_action,
+                VarError::UnknownAction(String::from("action1")),
+                "Action 'action1' does not exist"
+            );
+            test!(
+                missing_var_name,
+                VarError::MissingVarName,
+                "Missing variable name"
+            );
+            test!(
+                unknown_var,
+                VarError::UnknownVar(String::from("action1"), String::from("foo")),
+                "No variable 'foo' in 'action1' outputs"
+            );
         }
     }
 }

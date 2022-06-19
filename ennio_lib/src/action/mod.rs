@@ -7,6 +7,8 @@ use std::{
     fmt::{self, Display, Formatter},
 };
 
+pub static ACTION_NAME_PATTERN: &str = "[A-z0-9_]+";
+
 pub trait Action {
     fn name(&self) -> &str;
 
