@@ -38,7 +38,8 @@ impl Workflow {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{action::test::*, var::*, *};
+    use crate::{action::test::*, *};
+    use serde_json::{value::Number, Map, Value};
 
     mod workflow {
         use super::*;
@@ -77,20 +78,20 @@ mod test {
                 let workflow_name = "workflow1";
                 let action1_name = "action1";
                 let action1_status = Status::Unchanged;
-                let action1_output = Output::new(action1_status).add_var("foo1", Var::Integer(15));
+                let action1_output =
+                    Output::new(action1_status).add_var("foo1", Value::Number(Number::from(15i8)));
                 let action2_name = "action2";
                 let action2_status = Status::Changed;
-                let action2_output =
-                    Output::new(action2_status).add_var("foo2", Var::Boolean(true));
+                let action2_output = Output::new(action2_status).add_var("foo2", Value::Bool(true));
                 let action3_name = "action3";
                 let action3_status = Status::Failed;
-                let action3_output =
-                    Output::new(action3_status).add_var("foo3", Var::String(String::from("bar1")));
+                let action3_output = Output::new(action3_status)
+                    .add_var("foo3", Value::String(String::from("bar1")));
                 let action4_name = "action4";
                 let action4_status = Status::Skipped;
                 let action4_output = Output::new(action4_status).add_var(
                     "foo4",
-                    Var::Hash(vars!(String::from("foo4"), Var::Integer(15))),
+                    Value::Object(vars!("foo4", Value::Number(Number::from(15i8)))),
                 );
                 let expected = outputs!(
                     action1_name,

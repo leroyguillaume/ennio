@@ -1,6 +1,7 @@
 pub mod bash;
 
-use crate::{context::*, var::*, *};
+use crate::{context::*, *};
+use serde_json::{Map, Value};
 use std::{
     collections::HashMap,
     fmt::{self, Display, Formatter},
@@ -15,7 +16,7 @@ pub trait Action {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Output {
     status: Status,
-    vars: Vars,
+    vars: Map<String, Value>,
 }
 
 impl Output {
@@ -26,8 +27,8 @@ impl Output {
         }
     }
 
-    pub fn add_var(mut self, name: &str, var: Var) -> Self {
-        self.vars.insert(name.into(), var);
+    pub fn add_var(mut self, name: &str, val: Value) -> Self {
+        self.vars.insert(name.into(), val);
         self
     }
 
@@ -35,15 +36,15 @@ impl Output {
         self.status
     }
 
-    pub fn var(&self, name: &str) -> Option<Var> {
+    pub fn value(&self, name: &str) -> Option<Value> {
         self.vars.get(name).cloned()
     }
 
-    pub fn vars(&self) -> &Vars {
+    pub fn vars(&self) -> &Map<String, Value> {
         &self.vars
     }
 
-    pub fn with_vars(mut self, vars: Vars) -> Self {
+    pub fn with_vars(mut self, vars: Map<String, Value>) -> Self {
         self.vars = vars;
         self
     }
@@ -74,6 +75,7 @@ impl Display for Status {
 #[cfg(test)]
 pub mod test {
     use super::*;
+    use serde_json::value::Number;
 
     macro_rules! action_stub {
         ($name:expr, $run_fn:expr) => {
@@ -115,13 +117,13 @@ pub mod test {
             #[test]
             fn should_add_var() {
                 let name = "foo";
-                let var = Var::Integer(15);
-                let expected = vars!(name, var.clone());
+                let val = Value::Number(Number::from(15i8));
+                let expected = vars!(name, val.clone());
                 let output = Output {
                     status: Status::Changed,
-                    vars: Vars::new(),
+                    vars: Map::new(),
                 };
-                let output = output.add_var(name, var);
+                let output = output.add_var(name, val);
                 assert_eq!(output.vars, expected);
             }
         }
@@ -155,12 +157,38 @@ pub mod test {
             }
         }
 
+        mod value {
+            use super::*;
+
+            #[test]
+            fn should_return_none() {
+                let output = Output {
+                    status: Status::Changed,
+                    vars: vars!(),
+                };
+                let val = output.value("foo");
+                assert!(val.is_none());
+            }
+
+            #[test]
+            fn should_return_var() {
+                let name = "foo";
+                let expected = Value::Number(Number::from(15i8));
+                let output = Output {
+                    status: Status::Changed,
+                    vars: vars!(name, expected.clone()),
+                };
+                let val = output.value(name).unwrap();
+                assert_eq!(val, expected);
+            }
+        }
+
         mod vars {
             use super::*;
 
             #[test]
             fn should_return_vars() {
-                let expected = vars!("foo", Var::Integer(15));
+                let expected = vars!("foo", Value::Number(Number::from(15i8)));
                 let output = Output {
                     status: Status::Changed,
                     vars: expected.clone(),
@@ -170,38 +198,12 @@ pub mod test {
             }
         }
 
-        mod var {
-            use super::*;
-
-            #[test]
-            fn should_return_none() {
-                let output = Output {
-                    status: Status::Changed,
-                    vars: vars!(),
-                };
-                let var = output.var("foo");
-                assert!(var.is_none());
-            }
-
-            #[test]
-            fn should_return_var() {
-                let name = "foo";
-                let expected = Var::Integer(15);
-                let output = Output {
-                    status: Status::Changed,
-                    vars: vars!(name, expected.clone()),
-                };
-                let var = output.var(name).unwrap();
-                assert_eq!(var, expected);
-            }
-        }
-
         mod with_vars {
             use super::*;
 
             #[test]
             fn should_set_vars() {
-                let expected = vars!("foo", Var::Integer(15));
+                let expected = vars!("foo", Value::Number(Number::from(15i8)));
                 let output = Output {
                     status: Status::Changed,
                     vars: expected.clone(),

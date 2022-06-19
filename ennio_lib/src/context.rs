@@ -1,4 +1,5 @@
-use crate::{action::*, var::*};
+use crate::action::*;
+use serde_json::Value;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Context<'a> {
@@ -30,8 +31,9 @@ impl<'a> Context<'a> {
         self.outputs.insert(name.into(), output);
     }
 
-    pub fn var(&self, action_name: &str, name: &str) -> Option<Var> {
-        self.output(action_name).and_then(|output| output.var(name))
+    pub fn value(&self, action_name: &str, var_name: &str) -> Option<Value> {
+        self.output(action_name)
+            .and_then(|output| output.value(var_name))
     }
 
     pub fn workflow_name(&self) -> &str {
@@ -43,6 +45,7 @@ impl<'a> Context<'a> {
 mod test {
     use super::*;
     use crate::*;
+    use serde_json::value::Number;
 
     mod new {
         use super::*;
@@ -134,7 +137,7 @@ mod test {
         }
     }
 
-    mod var {
+    mod value {
         use super::*;
 
         #[test]
@@ -143,8 +146,8 @@ mod test {
                 workflow_name: "workflow1",
                 outputs: outputs!(),
             };
-            let var = ctx.var("action1", "foo");
-            assert!(var.is_none());
+            let val = ctx.value("action1", "foo");
+            assert!(val.is_none());
         }
 
         #[test]
@@ -155,22 +158,22 @@ mod test {
                 workflow_name: "workflow1",
                 outputs: outputs!(output_name, output),
             };
-            let var = ctx.var(output_name, "foo");
-            assert!(var.is_none());
+            let val = ctx.value(output_name, "foo");
+            assert!(val.is_none());
         }
 
         #[test]
         fn should_return_var() {
             let output_name = "action1";
             let name = "foo";
-            let expected = Var::Integer(15);
+            let expected = Value::Number(Number::from(15i8));
             let output = Output::new(Status::Changed).add_var(name, expected.clone());
             let ctx = Context {
                 workflow_name: "workflow1",
                 outputs: outputs!(output_name, output),
             };
-            let var = ctx.var(output_name, name).unwrap();
-            assert_eq!(var, expected);
+            let value = ctx.value(output_name, name).unwrap();
+            assert_eq!(value, expected);
         }
     }
 
