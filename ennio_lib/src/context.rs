@@ -31,7 +31,7 @@ impl<'a> Context<'a> {
         self.outputs.insert(name.into(), output);
     }
 
-    pub fn value(&self, action_name: &str, var_name: &str) -> Option<Value> {
+    pub fn value(&self, action_name: &str, var_name: &str) -> Option<&Value> {
         self.output(action_name)
             .and_then(|output| output.value(var_name))
     }
@@ -173,7 +173,7 @@ mod test {
                 outputs: outputs!(output_name, output),
             };
             let value = ctx.value(output_name, name).unwrap();
-            assert_eq!(value, expected);
+            assert_eq!(*value, expected);
         }
     }
 

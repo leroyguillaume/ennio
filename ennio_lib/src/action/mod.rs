@@ -36,8 +36,8 @@ impl Output {
         self.status
     }
 
-    pub fn value(&self, name: &str) -> Option<Value> {
-        self.vars.get(name).cloned()
+    pub fn value(&self, name: &str) -> Option<&Value> {
+        self.vars.get(name)
     }
 
     pub fn vars(&self) -> &Map<String, Value> {
@@ -179,7 +179,7 @@ pub mod test {
                     vars: vars!(name, expected.clone()),
                 };
                 let val = output.value(name).unwrap();
-                assert_eq!(val, expected);
+                assert_eq!(*val, expected);
             }
         }
 
