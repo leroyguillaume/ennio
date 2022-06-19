@@ -3,7 +3,6 @@ use crate::{
     command::{Command, Output as CmdOutput},
 };
 use log::{debug, error};
-use serde_json::Value;
 use std::io;
 
 pub struct BashAction {
@@ -40,12 +39,12 @@ impl Action for BashAction {
                     Status::Failed
                 };
                 Output::new(status)
-                    .add_var("stdout", Value::String(output.stdout()))
-                    .add_var("stderr", Value::String(stderr))
+                    .add_var("stdout", output.stdout().into())
+                    .add_var("stderr", stderr.into())
             }
             Err(err) => {
                 error!("Unable to execute script: {}", err);
-                Output::new(Status::Failed).add_var("stderr", Value::String(err.to_string()))
+                Output::new(Status::Failed).add_var("stderr", err.to_string().into())
             }
         }
     }
@@ -116,8 +115,8 @@ mod test {
                     let stdout = "stdout";
                     let stderr = "stderr";
                     let expected = Output::new($status)
-                        .add_var("stdout", Value::String(stdout.into()))
-                        .add_var("stderr", Value::String(stderr.into()));
+                        .add_var("stdout", stdout.into())
+                        .add_var("stderr", stderr.into());
                     let ctx = Context::new("workflow1");
                     let script = "echo 'it works!'";
                     let action = BashAction {
@@ -141,10 +140,8 @@ mod test {
             #[test]
             fn should_return_output_with_failed_status_if_io_err() {
                 let err_kind = io::ErrorKind::PermissionDenied;
-                let expected = Output::new(Status::Failed).add_var(
-                    "stderr",
-                    Value::String(io::Error::from(err_kind).to_string()),
-                );
+                let expected = Output::new(Status::Failed)
+                    .add_var("stderr", io::Error::from(err_kind).to_string().into());
                 let ctx = Context::new("workflow1");
                 let script = "echo 'it works!'";
                 let action = BashAction {

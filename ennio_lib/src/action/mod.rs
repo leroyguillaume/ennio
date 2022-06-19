@@ -1,7 +1,6 @@
 pub mod bash;
 
-use crate::{context::*, *};
-use serde_json::{Map, Value};
+use crate::{context::*, var::*, *};
 use std::{
     collections::HashMap,
     fmt::{self, Display, Formatter},
@@ -25,14 +24,14 @@ pub enum BuildError {}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Output {
     status: Status,
-    vars: Map<String, Value>,
+    vars: Hash,
 }
 
 impl Output {
     pub fn new(status: Status) -> Self {
         Self {
             status,
-            vars: vars!(),
+            vars: hash!(),
         }
     }
 
@@ -49,11 +48,11 @@ impl Output {
         self.vars.get(name)
     }
 
-    pub fn vars(&self) -> &Map<String, Value> {
+    pub fn vars(&self) -> &Hash {
         &self.vars
     }
 
-    pub fn with_vars(mut self, vars: Map<String, Value>) -> Self {
+    pub fn with_vars(mut self, vars: Hash) -> Self {
         self.vars = vars;
         self
     }
@@ -84,7 +83,6 @@ impl Display for Status {
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use serde_json::value::Number;
 
     macro_rules! action_stub {
         ($name:expr, $run_fn:expr) => {
@@ -126,13 +124,13 @@ pub mod test {
             #[test]
             fn should_add_var() {
                 let name = "foo";
-                let val = Value::Number(Number::from(15i8));
-                let expected = vars!(name, val.clone());
+                let val = 15u8;
+                let expected = hash!(name, val);
                 let output = Output {
                     status: Status::Changed,
-                    vars: Map::new(),
+                    vars: Hash::new(),
                 };
-                let output = output.add_var(name, val);
+                let output = output.add_var(name, Value::from(val));
                 assert_eq!(output.vars, expected);
             }
         }
@@ -145,7 +143,7 @@ pub mod test {
                 let status = Status::Changed;
                 let expected = Output {
                     status,
-                    vars: vars!(),
+                    vars: hash!(),
                 };
                 let output = Output::new(status);
                 assert_eq!(output, expected);
@@ -160,7 +158,7 @@ pub mod test {
                 let expected = Status::Changed;
                 let output = Output {
                     status: expected,
-                    vars: vars!(),
+                    vars: hash!(),
                 };
                 assert_eq!(output.status(), expected);
             }
@@ -173,22 +171,22 @@ pub mod test {
             fn should_return_none() {
                 let output = Output {
                     status: Status::Changed,
-                    vars: vars!(),
+                    vars: hash!(),
                 };
                 let val = output.value("foo");
                 assert!(val.is_none());
             }
 
             #[test]
-            fn should_return_var() {
+            fn should_return_val() {
                 let name = "foo";
-                let expected = Value::Number(Number::from(15i8));
+                let expected = 15u8;
                 let output = Output {
                     status: Status::Changed,
-                    vars: vars!(name, expected.clone()),
+                    vars: hash!(name, expected),
                 };
                 let val = output.value(name).unwrap();
-                assert_eq!(*val, expected);
+                assert_eq!(*val, Value::from(expected));
             }
         }
 
@@ -197,7 +195,7 @@ pub mod test {
 
             #[test]
             fn should_return_vars() {
-                let expected = vars!("foo", Value::Number(Number::from(15i8)));
+                let expected = hash!("foo", 15u8);
                 let output = Output {
                     status: Status::Changed,
                     vars: expected.clone(),
@@ -212,7 +210,7 @@ pub mod test {
 
             #[test]
             fn should_set_vars() {
-                let expected = vars!("foo", Value::Number(Number::from(15i8)));
+                let expected = hash!("foo", 15u8);
                 let output = Output {
                     status: Status::Changed,
                     vars: expected.clone(),

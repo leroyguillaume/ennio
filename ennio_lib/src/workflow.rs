@@ -38,8 +38,7 @@ impl Workflow {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{action::test::*, *};
-    use serde_json::{value::Number, Map, Value};
+    use crate::{action::test::*, var::*, *};
 
     mod workflow {
         use super::*;
@@ -78,8 +77,7 @@ mod test {
                 let workflow_name = "workflow1";
                 let action1_name = "action1";
                 let action1_status = Status::Unchanged;
-                let action1_output =
-                    Output::new(action1_status).add_var("foo1", Value::Number(Number::from(15i8)));
+                let action1_output = Output::new(action1_status).add_var("foo1", Value::from(15u8));
                 let action2_name = "action2";
                 let action2_status = Status::Changed;
                 let action2_output = Output::new(action2_status).add_var("foo2", Value::Bool(true));
@@ -89,10 +87,8 @@ mod test {
                     .add_var("foo3", Value::String(String::from("bar1")));
                 let action4_name = "action4";
                 let action4_status = Status::Skipped;
-                let action4_output = Output::new(action4_status).add_var(
-                    "foo4",
-                    Value::Object(vars!("foo4", Value::Number(Number::from(15i8)))),
-                );
+                let action4_output =
+                    Output::new(action4_status).add_var("foo4", Value::Hash(hash!("foo4", 15u8)));
                 let expected = outputs!(
                     action1_name,
                     action1_output.clone(),
