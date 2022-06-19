@@ -1,0 +1,6 @@
+---
+name: workflow1
+actions:
+  - name: run_echo
+    run: |
+      echo it works!

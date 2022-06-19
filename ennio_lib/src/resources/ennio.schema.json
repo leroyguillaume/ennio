@@ -1,0 +1,48 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Ennio",
+    "description": "Enio configuration file",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Name of the workflow"
+        },
+        "actions": {
+            "type": "array",
+            "description": "List of actions",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the action"
+                    },
+                    "run": {
+                        "type": "string",
+                        "description": "Script to run"
+                    },
+                    "helm": {
+                        "type": "string"
+                    }
+                },
+                "allOf": [
+                    {
+                        "required": ["name"]
+                    }
+                ],
+                "oneOf": [
+                    {
+                        "required": ["run"]
+                    },
+                    {
+                        "required": ["helm"]
+                    }
+                ]
+            }
+        }
+    },
+    "required": [
+        "name"
+    ]
+}
