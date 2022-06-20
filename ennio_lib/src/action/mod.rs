@@ -1,6 +1,6 @@
 pub mod bash;
 
-use crate::{context::*, var::*, *};
+use crate::{context::*, var::*};
 use std::fmt::{self, Display, Formatter};
 
 pub static ACTION_NAME_PATTERN: &str = "[A-z0-9_]+";
@@ -28,7 +28,7 @@ impl Output {
     pub fn new(status: Status) -> Self {
         Self {
             status,
-            vars: hash!(),
+            vars: Hash::new(),
         }
     }
 
@@ -119,13 +119,13 @@ pub mod test {
             #[test]
             fn should_add_var() {
                 let name = "foo";
-                let val = 15u8;
-                let expected = hash!(name, val);
+                let val = Value::from(15u8);
+                let expected = Hash::from([(name.into(), val.clone())]);
                 let output = Output {
                     status: Status::Changed,
                     vars: Hash::new(),
                 };
-                let output = output.add_var(name, Value::from(val));
+                let output = output.add_var(name, val);
                 assert_eq!(output.vars, expected);
             }
         }
@@ -138,7 +138,7 @@ pub mod test {
                 let status = Status::Changed;
                 let expected = Output {
                     status,
-                    vars: hash!(),
+                    vars: Hash::new(),
                 };
                 let output = Output::new(status);
                 assert_eq!(output, expected);
@@ -153,7 +153,7 @@ pub mod test {
                 let expected = Status::Changed;
                 let output = Output {
                     status: expected,
-                    vars: hash!(),
+                    vars: Hash::new(),
                 };
                 assert_eq!(output.status(), expected);
             }
@@ -166,7 +166,7 @@ pub mod test {
             fn should_return_none() {
                 let output = Output {
                     status: Status::Changed,
-                    vars: hash!(),
+                    vars: Hash::new(),
                 };
                 let val = output.value("foo");
                 assert!(val.is_none());
@@ -175,13 +175,13 @@ pub mod test {
             #[test]
             fn should_return_val() {
                 let name = "foo";
-                let expected = 15u8;
+                let expected = Value::from(15u8);
                 let output = Output {
                     status: Status::Changed,
-                    vars: hash!(name, expected),
+                    vars: Hash::from([(name.into(), expected.clone())]),
                 };
                 let val = output.value(name).unwrap();
-                assert_eq!(*val, Value::from(expected));
+                assert_eq!(*val, expected);
             }
         }
 
@@ -190,7 +190,7 @@ pub mod test {
 
             #[test]
             fn should_return_vars() {
-                let expected = hash!("foo", 15u8);
+                let expected = Hash::from([(String::from("foo"), Value::from(15u8))]);
                 let output = Output {
                     status: Status::Changed,
                     vars: expected.clone(),
@@ -205,7 +205,7 @@ pub mod test {
 
             #[test]
             fn should_set_vars() {
-                let expected = hash!("foo", 15u8);
+                let expected = Hash::from([(String::from("foo"), Value::from(15u8))]);
                 let output = Output {
                     status: Status::Changed,
                     vars: expected.clone(),

@@ -38,7 +38,7 @@ impl Workflow {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{action::test::*, var::*, *};
+    use crate::{action::test::*, var::*};
 
     mod workflow {
         use super::*;
@@ -87,8 +87,10 @@ mod test {
                     .add_var("foo3", Value::String(String::from("bar1")));
                 let action4_name = "action4";
                 let action4_status = Status::Skipped;
-                let action4_output =
-                    Output::new(action4_status).add_var("foo4", Value::Hash(hash!("foo4", 15u8)));
+                let action4_output = Output::new(action4_status).add_var(
+                    "foo4",
+                    Value::Hash(Hash::from([(String::from("foo4"), Value::from(15u8))])),
+                );
                 let expected = Outputs::from([
                     (action1_name.into(), action1_output.clone()),
                     (action2_name.into(), action2_output.clone()),

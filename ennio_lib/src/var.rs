@@ -18,13 +18,6 @@ macro_rules! value_from {
     };
 }
 
-#[macro_export]
-macro_rules! hash {
-    ($($name:expr, $value:expr),*) => {
-        Hash::from([$((String::from($name), Value::from($value))),*])
-    };
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Value {
     Bool(bool),
