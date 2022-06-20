@@ -89,16 +89,12 @@ mod test {
                 let action4_status = Status::Skipped;
                 let action4_output =
                     Output::new(action4_status).add_var("foo4", Value::Hash(hash!("foo4", 15u8)));
-                let expected = outputs!(
-                    action1_name,
-                    action1_output.clone(),
-                    action2_name,
-                    action2_output.clone(),
-                    action3_name,
-                    action3_output.clone(),
-                    action4_name,
-                    action4_output.clone()
-                );
+                let expected = Outputs::from([
+                    (action1_name.into(), action1_output.clone()),
+                    (action2_name.into(), action2_output.clone()),
+                    (action3_name.into(), action3_output.clone()),
+                    (action4_name.into(), action4_output.clone()),
+                ]);
                 let action1 = action_stub!(action1_name, {
                     let action1_output = action1_output.clone();
                     move |ctx| {
@@ -110,7 +106,8 @@ mod test {
                     let action1_output = action1_output.clone();
                     let action2_output = action2_output.clone();
                     move |ctx| {
-                        let expected = outputs!(action1_name, action1_output.clone());
+                        let expected =
+                            Outputs::from([(action1_name.into(), action1_output.clone())]);
                         assert_eq!(ctx.outputs().clone(), expected);
                         action2_output.clone()
                     }
@@ -120,25 +117,20 @@ mod test {
                     let action2_output = action2_output.clone();
                     let action3_output = action3_output.clone();
                     move |ctx| {
-                        let expected = outputs!(
-                            action1_name,
-                            action1_output.clone(),
-                            action2_name,
-                            action2_output.clone()
-                        );
+                        let expected = Outputs::from([
+                            (action1_name.into(), action1_output.clone()),
+                            (action2_name.into(), action2_output.clone()),
+                        ]);
                         assert_eq!(ctx.outputs().clone(), expected);
                         action3_output.clone()
                     }
                 });
                 let action4 = action_stub!(action4_name, move |ctx| {
-                    let expected = outputs!(
-                        action1_name,
-                        action1_output.clone(),
-                        action2_name,
-                        action2_output.clone(),
-                        action3_name,
-                        action3_output.clone()
-                    );
+                    let expected = Outputs::from([
+                        (action1_name.into(), action1_output.clone()),
+                        (action2_name.into(), action2_output.clone()),
+                        (action3_name.into(), action3_output.clone()),
+                    ]);
                     assert_eq!(ctx.outputs().clone(), expected);
                     action4_output.clone()
                 });

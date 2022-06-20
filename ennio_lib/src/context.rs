@@ -1,6 +1,9 @@
 use crate::{action::*, var::*};
 use regex::Regex;
-use std::fmt::{self, Display, Formatter};
+use std::{
+    collections::HashMap,
+    fmt::{self, Display, Formatter},
+};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Context<'a> {
@@ -59,6 +62,8 @@ impl<'a> Context<'a> {
     }
 }
 
+pub type Outputs = HashMap<String, Output>;
+
 #[derive(Debug)]
 pub enum VarError {
     InvalidSyntax(String),
@@ -84,7 +89,6 @@ impl Display for VarError {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::*;
 
     mod new {
         use super::*;
@@ -94,7 +98,7 @@ mod test {
             let workflow_name = "workflow1";
             let exepcted = Context {
                 workflow_name,
-                outputs: outputs!(),
+                outputs: Outputs::new(),
             };
             let ctx = Context::new(workflow_name);
             assert_eq!(ctx, exepcted);
@@ -108,7 +112,7 @@ mod test {
         fn should_return_none() {
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(),
+                outputs: Outputs::new(),
             };
             let output = ctx.output("action1");
             assert!(output.is_none());
@@ -120,7 +124,7 @@ mod test {
             let expected = Output::new(Status::Changed);
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(name, expected.clone()),
+                outputs: Outputs::from([(name.into(), expected.clone())]),
             };
             let output = ctx.output(name).unwrap();
             assert_eq!(*output, expected);
@@ -133,7 +137,7 @@ mod test {
         #[test]
         fn should_return_outputs() {
             let output = Output::new(Status::Changed);
-            let expected = outputs!("action1", output);
+            let expected = Outputs::from([(String::from("action1"), output)]);
             let ctx = Context {
                 workflow_name: "workflow1",
                 outputs: expected.clone(),
@@ -149,7 +153,7 @@ mod test {
         #[test]
         fn should_return_outputs() {
             let output = Output::new(Status::Changed);
-            let expected = outputs!("action1", output);
+            let expected = Outputs::from([(String::from("action1"), output)]);
             let ctx = Context {
                 workflow_name: "workflow1",
                 outputs: expected.clone(),
@@ -166,10 +170,10 @@ mod test {
         fn should_update_outputs() {
             let name = "action1";
             let output = Output::new(Status::Changed);
-            let expected = outputs!(name, output.clone());
+            let expected = Outputs::from([(name.into(), output.clone())]);
             let mut ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(),
+                outputs: Outputs::new(),
             };
             ctx.update(name, output);
             assert_eq!(ctx.outputs, expected);
@@ -184,7 +188,7 @@ mod test {
             let expected = "éè";
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(),
+                outputs: Outputs::new(),
             };
             match ctx.value(expected) {
                 Ok(_) => panic!("should fail"),
@@ -198,7 +202,7 @@ mod test {
             let expected = "foo";
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(),
+                outputs: Outputs::new(),
             };
             match ctx.value(expected) {
                 Ok(_) => panic!("should fail"),
@@ -215,7 +219,7 @@ mod test {
             let output = Output::new(Status::Changed);
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(action_name, output),
+                outputs: Outputs::from([(action_name.into(), output)]),
             };
             match ctx.value(action_name) {
                 Ok(_) => panic!("should fail"),
@@ -231,7 +235,7 @@ mod test {
             let expected_var_name = "foo";
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(expected_action_name, output),
+                outputs: Outputs::from([(expected_action_name.into(), output)]),
             };
             match ctx.value(&format!("{}.{}", expected_action_name, expected_var_name)) {
                 Ok(_) => panic!("should fail"),
@@ -251,7 +255,7 @@ mod test {
             let output = Output::new(Status::Changed).add_var(var_name, expected.clone());
             let ctx = Context {
                 workflow_name: "workflow1",
-                outputs: outputs!(action_name, output),
+                outputs: Outputs::from([(action_name.into(), output)]),
             };
             let val = ctx.value(&format!("{}.{}", action_name, var_name)).unwrap();
             assert_eq!(val.clone(), expected);
@@ -266,7 +270,7 @@ mod test {
             let expected = "workflow1";
             let ctx = Context {
                 workflow_name: expected,
-                outputs: outputs!(),
+                outputs: Outputs::new(),
             };
             assert_eq!(ctx.workflow_name(), expected);
         }

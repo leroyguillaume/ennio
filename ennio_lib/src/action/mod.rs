@@ -1,10 +1,7 @@
 pub mod bash;
 
 use crate::{context::*, var::*, *};
-use std::{
-    collections::HashMap,
-    fmt::{self, Display, Formatter},
-};
+use std::fmt::{self, Display, Formatter};
 
 pub static ACTION_NAME_PATTERN: &str = "[A-z0-9_]+";
 
@@ -57,8 +54,6 @@ impl Output {
         self
     }
 }
-
-pub type Outputs = HashMap<String, Output>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Status {
