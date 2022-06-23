@@ -23,7 +23,7 @@ impl Config {
             error!("Unable to load configuration: {}", err);
             err
         })?;
-        let schema_json = String::from_utf8_lossy(include_bytes!("resources/ennio.schema.json"));
+        let schema_json = String::from_utf8_lossy(include_bytes!("../resources/ennio.schema.json"));
         let schema = serde_json::from_str::<serde_json::Value>(&schema_json).unwrap();
         let schema = JSONSchema::compile(&schema).unwrap();
         schema.validate(&json).map_err(|errs| {
