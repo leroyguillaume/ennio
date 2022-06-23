@@ -78,6 +78,7 @@ impl Display for Status {
 #[cfg(test)]
 pub mod test {
     use super::*;
+    use crate::*;
 
     macro_rules! action_stub {
         ($name:expr, $run_fn:expr) => {
@@ -119,13 +120,13 @@ pub mod test {
             #[test]
             fn should_add_var() {
                 let name = "foo";
-                let val = Value::from(15u8);
-                let expected = Hash::from([(name.into(), val.clone())]);
+                let val = 15u8;
+                let expected = hash!(name, val);
                 let output = Output {
                     status: Status::Changed,
                     vars: Hash::new(),
                 };
-                let output = output.add_var(name, val);
+                let output = output.add_var(name, val.into());
                 assert_eq!(output.vars, expected);
             }
         }
@@ -175,13 +176,13 @@ pub mod test {
             #[test]
             fn should_return_val() {
                 let name = "foo";
-                let expected = Value::from(15u8);
+                let expected = 15u8;
                 let output = Output {
                     status: Status::Changed,
-                    vars: Hash::from([(name.into(), expected.clone())]),
+                    vars: hash!(name, expected),
                 };
                 let val = output.value(name).unwrap();
-                assert_eq!(*val, expected);
+                assert_eq!(*val, expected.into());
             }
         }
 
@@ -190,7 +191,7 @@ pub mod test {
 
             #[test]
             fn should_return_vars() {
-                let expected = Hash::from([(String::from("foo"), Value::from(15u8))]);
+                let expected = hash!(String::from("foo"), Value::from(15u8));
                 let output = Output {
                     status: Status::Changed,
                     vars: expected.clone(),
@@ -205,7 +206,7 @@ pub mod test {
 
             #[test]
             fn should_set_vars() {
-                let expected = Hash::from([(String::from("foo"), Value::from(15u8))]);
+                let expected = hash!(String::from("foo"), Value::from(15u8));
                 let output = Output {
                     status: Status::Changed,
                     vars: expected.clone(),

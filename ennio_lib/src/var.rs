@@ -7,6 +7,13 @@ macro_rules! array {
     };
 }
 
+#[macro_export]
+macro_rules! hash {
+    ($($keys:expr, $values:expr),*) => {
+        Hash::from([$(($keys.into(), Value::from($values))),*])
+    };
+}
+
 macro_rules! impl_primitive_from_for_array {
     ($type:ty) => {
         impl From<Vec<$type>> for Array {
